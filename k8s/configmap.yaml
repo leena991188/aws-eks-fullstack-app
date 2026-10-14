@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: fullstack-app
+data:
+  AWS_REGION: "ap-southeast-2"
+  DB_HOST: "replace-with-your-rds-endpoint"
+  DB_PORT: "5432"
+  DB_NAME: "fullstackapp"
+  DB_USER: "appuser"
+  DB_SSL: "true"
+  JWT_SECRET_ARN: "replace-with-your-secrets-manager-secret-arn"
+  DYNAMODB_TABLE: "app-user-profiles"
+  UPLOAD_BUCKET: "replace-with-your-private-s3-bucket"

@@ -1,0 +1,77 @@
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-fullstackapp}
+      POSTGRES_USER: ${DB_USER:-appuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-appuser} -d ${DB_NAME:-fullstackapp}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  auth-service:
+    build: ./services/auth-service
+    environment:
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-fullstackapp}
+      DB_USER: ${DB_USER:-appuser}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      DB_SSL: "false"
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+
+  user-service:
+    build: ./services/user-service
+    environment:
+      PORT: 3002
+      AWS_REGION: ${AWS_REGION:-ap-southeast-2}
+      DYNAMODB_TABLE: ${DYNAMODB_TABLE:-app-user-profiles}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      AWS_PROFILE: ${AWS_PROFILE:-default}
+    ports:
+      - "3002:3002"
+
+  file-service:
+    build: ./services/file-service
+    environment:
+      PORT: 3003
+      AWS_REGION: ${AWS_REGION:-ap-southeast-2}
+      UPLOAD_BUCKET: ${UPLOAD_BUCKET:?Set UPLOAD_BUCKET in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      AWS_PROFILE: ${AWS_PROFILE:-default}
+    ports:
+      - "3003:3003"
+
+  admin-service:
+    build: ./services/admin-service
+    environment:
+      PORT: 3004
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-fullstackapp}
+      DB_USER: ${DB_USER:-appuser}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      DB_SSL: "false"
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3004:3004"
+
+volumes:
+  postgres_data:
